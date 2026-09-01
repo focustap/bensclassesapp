@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101827" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ben's Classes" />
+  <meta name="description" content="Ben's Fall 2026 UMass Dartmouth class schedule." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <title>Ben's Classes</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08111f;
+      --panel: rgba(18, 30, 49, .86);
+      --panel-2: rgba(30, 45, 68, .76);
+      --border: rgba(255,255,255,.10);
+      --text: #f5f8ff;
+      --muted: #9eb0c8;
+      --blue: #7cc7ff;
+      --green: #74e2ae;
+      --orange: #ffbe75;
+      --shadow: 0 18px 45px rgba(0,0,0,.30);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(54,145,255,.16), transparent 30rem),
+        linear-gradient(180deg, #0b1626 0%, var(--bg) 60%);
+      padding: max(20px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+    }
+
+    .app { width: min(100%, 560px); margin: 0 auto; }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 8px 2px 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 8vw, 42px);
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    .day-pill {
+      flex: 0 0 auto;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      padding: 9px 12px;
+      border-radius: 999px;
+      color: var(--blue);
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .hero {
+      border: 1px solid rgba(124,199,255,.20);
+      background: linear-gradient(145deg, rgba(28,71,109,.66), rgba(15,29,47,.92));
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: rgba(124,199,255,.08);
+      right: -70px;
+      top: -90px;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.15;
+      letter-spacing: -.025em;
+    }
+
+    .hero-meta {
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .countdown {
+      margin-top: 18px;
+      display: inline-flex;
+      padding: 8px 11px;
+      border-radius: 10px;
+      background: rgba(116,226,174,.12);
+      color: var(--green);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .section-title {
+      margin: 0 2px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      font-weight: 900;
+    }
+
+    .schedule {
+      display: grid;
+      gap: 10px;
+    }
+
+    .class-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 15px;
+      backdrop-filter: blur(12px);
+    }
+
+    .class-card.current {
+      border-color: rgba(116,226,174,.55);
+      box-shadow: 0 0 0 1px rgba(116,226,174,.08) inset;
+    }
+
+    .class-card.next {
+      border-color: rgba(124,199,255,.38);
+    }
+
+    .time {
+      font-weight: 900;
+      font-size: 15px;
+      line-height: 1.1;
+      color: var(--blue);
+    }
+
+    .time small {
+      display: block;
+      margin-top: 5px;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .course {
+      min-width: 0;
+    }
+
+    .course-code {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .course-name {
+      font-size: 16px;
+      font-weight: 850;
+      margin: 3px 0 5px;
+      line-height: 1.25;
+    }
+
+    .location {
+      color: #c4d0e1;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: rgba(255,255,255,.055);
+      text-decoration: none;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 10px;
+      border-radius: 10px;
+    }
+
+    .btn:active { transform: scale(.98); }
+
+    .empty {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      border-radius: 18px;
+      padding: 24px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .footer {
+      text-align: center;
+      color: #71839a;
+      font-size: 11px;
+      margin: 22px 0 4px;
+    }
+
+    .transition {
+      margin: 0 12px;
+      padding-left: 74px;
+      color: #6f839c;
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    @media (max-width: 380px) {
+      body { padding-left: 12px; padding-right: 12px; }
+      .class-card { grid-template-columns: 62px minmax(0,1fr); gap: 10px; }
+      .transition { padding-left: 64px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Ben's Classes</h1>
+        <div class="subtitle" id="dateText">Fall 2026 · UMass Dartmouth</div>
+      </div>
+      <div class="day-pill" id="dayPill">Today</div>
+    </header>
+
+    <section class="hero" id="hero">
+      <p class="eyebrow">Next up</p>
+      <h2 id="heroTitle">Checking your schedule…</h2>
+      <div class="hero-meta" id="heroMeta"></div>
+      <div class="countdown" id="countdown" hidden></div>
+    </section>
+
+    <p class="section-title" id="scheduleTitle">Today's schedule</p>
+    <section class="schedule" id="schedule"></section>
+
+    <div class="footer">MWF schedule · Fall 2026</div>
+  </main>
+
+  <script>
+    const classes = [
+      {
+        code: "POM 212-01",
+        name: "Business Statistics",
+        start: "10:00",
+        end: "10:50",
+        room: "Charlton College of Business 340",
+        building: "Charlton College of Business",
+        instructor: "Uday Jha",
+        map: "https://www.google.com/maps/search/?api=1&query=Charlton+College+of+Business+UMass+Dartmouth"
+      },
+      {
+        code: "MGT 312-02",
+        name: "Legal Framework Business",
+        start: "11:00",
+        end: "11:50",
+        room: "Charlton College of Business 247",
+        building: "Charlton College of Business",
+        instructor: "Bobby Hazelton",
+        map: "https://www.google.com/maps/search/?api=1&query=Charlton+College+of+Business+UMass+Dartmouth"
+      },
+      {
+        code: "ECO 232-04H",
+        name: "Principles Macro",
+        start: "13:00",
+        end: "13:50",
+        room: "Claire Carney Library 226",
+        building: "Claire Carney Library",
+        instructor: "Robert Jones",
+        map: "https://www.google.com/maps/search/?api=1&query=Claire+T+Carney+Library+UMass+Dartmouth"
+      },
+      {
+        code: "ACT 211-05H",
+        name: "Principles of Accounting I",
+        start: "14:00",
+        end: "14:50",
+        room: "Charlton College of Business 248",
+        building: "Charlton College of Business",
+        instructor: "Claudia Torres",
+        map: "https://www.google.com/maps/search/?api=1&query=Charlton+College+of+Business+UMass+Dartmouth"
+      },
+      {
+        code: "MKT 311-02",
+        name: "Principles of Marketing",
+        start: "15:00",
+        end: "15:50",
+        room: "Claire Carney Library 207",
+        building: "Claire Carney Library",
+        instructor: "Jennifer Dekkers",
+        map: "https://www.google.com/maps/search/?api=1&query=Claire+T+Carney+Library+UMass+Dartmouth"
+      }
+    ];
+
+    const classDays = new Set([1, 3, 5]); // Mon, Wed, Fri
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    const toMinutes = (hhmm) => {
+      const [h, m] = hhmm.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const formatTime = (hhmm) => {
+      let [h, m] = hhmm.split(":").map(Number);
+      const suffix = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      return `${h}:${String(m).padStart(2, "0")} ${suffix}`;
+    };
+
+    const dateAtTime = (date, hhmm) => {
+      const d = new Date(date);
+      const [h, m] = hhmm.split(":").map(Number);
+      d.setHours(h, m, 0, 0);
+      return d;
+    };
+
+    function nextScheduledClass(now) {
+      for (let offset = 0; offset < 8; offset++) {
+        const day = new Date(now);
+        day.setDate(now.getDate() + offset);
+        if (!classDays.has(day.getDay())) continue;
+
+        for (const cls of classes) {
+          const start = dateAtTime(day, cls.start);
+          const end = dateAtTime(day, cls.end);
+          if (offset === 0 && now > end) continue;
+          return { cls, start, end, isToday: offset === 0 };
+        }
+      }
+      return null;
+    }
+
+    function render() {
+      const now = new Date();
+      const todayMins = now.getHours() * 60 + now.getMinutes();
+      const isClassDay = classDays.has(now.getDay());
+
+      document.getElementById("dateText").textContent =
+        now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) +
+        " · UMass Dartmouth";
+      document.getElementById("dayPill").textContent = dayNames[now.getDay()];
+
+      const next = nextScheduledClass(now);
+      const heroTitle = document.getElementById("heroTitle");
+      const heroMeta = document.getElementById("heroMeta");
+      const countdown = document.getElementById("countdown");
+
+      if (next) {
+        const isCurrent = next.isToday && now >= next.start && now <= next.end;
+        heroTitle.textContent = isCurrent ? next.cls.name : next.cls.name;
+        heroMeta.innerHTML =
+          `${next.cls.code} · ${formatTime(next.cls.start)}<br>${next.cls.room}`;
+
+        const diff = next.start - now;
+        if (isCurrent) {
+          countdown.hidden = false;
+          countdown.textContent = "In class now";
+        } else if (diff > 0) {
+          const totalMins = Math.ceil(diff / 60000);
+          const hours = Math.floor(totalMins / 60);
+          const mins = totalMins % 60;
+          countdown.hidden = false;
+          countdown.textContent = next.isToday
+            ? `Starts in ${hours ? hours + "h " : ""}${mins}m`
+            : `${dayNames[next.start.getDay()]} at ${formatTime(next.cls.start)}`;
+        }
+      }
+
+      const schedule = document.getElementById("schedule");
+      const scheduleTitle = document.getElementById("scheduleTitle");
+      schedule.innerHTML = "";
+
+      if (!isClassDay) {
+        scheduleTitle.textContent = "Today's schedule";
+        schedule.innerHTML =
+          '<div class="empty"><strong>No classes today 🎉</strong><br>Your regular classes are Monday, Wednesday, and Friday.</div>';
+        return;
+      }
+
+      scheduleTitle.textContent = "Today's schedule";
+
+      classes.forEach((cls, i) => {
+        const startMins = toMinutes(cls.start);
+        const endMins = toMinutes(cls.end);
+        const current = todayMins >= startMins && todayMins <= endMins;
+        const nextToday = !current && todayMins < startMins &&
+          !classes.some(c => {
+            const s = toMinutes(c.start), e = toMinutes(c.end);
+            return (todayMins >= s && todayMins <= e) || (todayMins < s && s < startMins);
+          });
+
+        const card = document.createElement("article");
+        card.className = "class-card" + (current ? " current" : "") + (nextToday ? " next" : "");
+        card.innerHTML = `
+          <div class="time">
+            ${formatTime(cls.start).replace(" ", "<br>")}
+            <small>to ${formatTime(cls.end)}</small>
+          </div>
+          <div class="course">
+            <div class="course-code">${cls.code}${current ? " · NOW" : ""}</div>
+            <div class="course-name">${cls.name}</div>
+            <div class="location">${cls.room}<br>${cls.instructor}</div>
+            <div class="actions">
+              <a class="btn" href="${cls.map}" target="_blank" rel="noopener">Open building in Maps</a>
+            </div>
+          </div>
+        `;
+        schedule.appendChild(card);
+
+        if (i < classes.length - 1) {
+          const nextClass = classes[i + 1];
+          const gap = toMinutes(nextClass.start) - toMinutes(cls.end);
+          const buildingChange = cls.building !== nextClass.building;
+          const transition = document.createElement("div");
+          transition.className = "transition";
+          transition.textContent = buildingChange
+            ? `${gap} min · walk to ${nextClass.building}`
+            : `${gap} min · stay in ${cls.building}`;
+          schedule.appendChild(transition);
+        }
+      });
+    }
+
+    render();
+    setInterval(render, 30000);
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js"));
+    }
+  </script>
+</body>
+</html>
