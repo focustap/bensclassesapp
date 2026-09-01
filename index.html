@@ -376,6 +376,15 @@
       return null;
     }
 
+    function nextClassDay(now) {
+      for (let offset = 1; offset < 8; offset++) {
+        const day = new Date(now);
+        day.setDate(now.getDate() + offset);
+        if (classDays.has(day.getDay())) return day;
+      }
+      return null;
+    }
+
     function render() {
       const now = new Date();
       const todayMins = now.getHours() * 60 + now.getMinutes();
@@ -416,24 +425,24 @@
       const scheduleTitle = document.getElementById("scheduleTitle");
       schedule.innerHTML = "";
 
-      if (!isClassDay) {
-        scheduleTitle.textContent = "Today's schedule";
-        schedule.innerHTML =
-          '<div class="empty"><strong>No classes today 🎉</strong><br>Your regular classes are Monday, Wednesday, and Friday.</div>';
-        return;
-      }
+      const previewDay = isClassDay ? null : nextClassDay(now);
+      const showingFutureDay = !!previewDay;
 
-      scheduleTitle.textContent = "Today's schedule";
+      scheduleTitle.textContent = showingFutureDay
+        ? `${dayNames[previewDay.getDay()]}'s schedule`
+        : "Today's schedule";
 
       classes.forEach((cls, i) => {
         const startMins = toMinutes(cls.start);
         const endMins = toMinutes(cls.end);
-        const current = todayMins >= startMins && todayMins <= endMins;
-        const nextToday = !current && todayMins < startMins &&
-          !classes.some(c => {
-            const s = toMinutes(c.start), e = toMinutes(c.end);
-            return (todayMins >= s && todayMins <= e) || (todayMins < s && s < startMins);
-          });
+        const current = !showingFutureDay && todayMins >= startMins && todayMins <= endMins;
+        const nextToday = showingFutureDay
+          ? i === 0
+          : !current && todayMins < startMins &&
+            !classes.some(c => {
+              const s = toMinutes(c.start), e = toMinutes(c.end);
+              return (todayMins >= s && todayMins <= e) || (todayMins < s && s < startMins);
+            });
 
         const card = document.createElement("article");
         card.className = "class-card" + (current ? " current" : "") + (nextToday ? " next" : "");
