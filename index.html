@@ -286,6 +286,7 @@
         room: "Charlton College of Business 340",
         building: "Charlton College of Business",
         instructor: "Uday Jha",
+        floor: "3rd floor",
         map: "https://www.google.com/maps/search/?api=1&query=Charlton+College+of+Business+UMass+Dartmouth"
       },
       {
@@ -296,6 +297,7 @@
         room: "Charlton College of Business 247",
         building: "Charlton College of Business",
         instructor: "Bobby Hazelton",
+        floor: "2nd floor",
         map: "https://www.google.com/maps/search/?api=1&query=Charlton+College+of+Business+UMass+Dartmouth"
       },
       {
@@ -306,6 +308,7 @@
         room: "Claire Carney Library 226",
         building: "Claire Carney Library",
         instructor: "Robert Jones",
+        floor: "2nd floor",
         map: "https://www.google.com/maps/search/?api=1&query=Claire+T+Carney+Library+UMass+Dartmouth"
       },
       {
@@ -316,6 +319,7 @@
         room: "Charlton College of Business 248",
         building: "Charlton College of Business",
         instructor: "Claudia Torres",
+        floor: "2nd floor",
         map: "https://www.google.com/maps/search/?api=1&query=Charlton+College+of+Business+UMass+Dartmouth"
       },
       {
@@ -326,6 +330,7 @@
         room: "Claire Carney Library 207",
         building: "Claire Carney Library",
         instructor: "Jennifer Dekkers",
+        floor: "2nd floor",
         map: "https://www.google.com/maps/search/?api=1&query=Claire+T+Carney+Library+UMass+Dartmouth"
       }
     ];
@@ -446,7 +451,7 @@
           <div class="course">
             <div class="course-code">${cls.code}${current ? " · NOW" : ""}</div>
             <div class="course-name">${cls.name}</div>
-            <div class="location">${cls.room}<br>${cls.instructor}</div>
+            <div class="location">${cls.room}<br>${cls.instructor} · ${cls.floor}</div>
           </div>
         `;
         schedule.appendChild(card);
