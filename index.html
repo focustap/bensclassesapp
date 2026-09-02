@@ -247,18 +247,9 @@
       margin: 22px 0 4px;
     }
 
-    .transition {
-      margin: 0 12px;
-      padding-left: 74px;
-      color: #6f839c;
-      font-size: 11px;
-      line-height: 1.2;
-    }
-
     @media (max-width: 380px) {
       body { padding-left: 12px; padding-right: 12px; }
       .class-card { grid-template-columns: 62px minmax(0,1fr); gap: 10px; }
-      .transition { padding-left: 64px; }
     }
   </style>
 </head>
@@ -282,7 +273,7 @@
     <p class="section-title" id="scheduleTitle">Today's schedule</p>
     <section class="schedule" id="schedule"></section>
 
-    <div class="footer">MWF schedule · Fall 2026</div>
+    <div class="footer">MWF schedule · Fall 2026 <span id="buildNumber"></span></div>
   </main>
 
   <script>
@@ -459,22 +450,24 @@
           </div>
         `;
         schedule.appendChild(card);
-
-        if (i < classes.length - 1) {
-          const nextClass = classes[i + 1];
-          const gap = toMinutes(nextClass.start) - toMinutes(cls.end);
-          const buildingChange = cls.building !== nextClass.building;
-          const transition = document.createElement("div");
-          transition.className = "transition";
-          transition.textContent = buildingChange
-            ? `${gap} min · walk to ${nextClass.building}`
-            : `${gap} min · stay in ${cls.building}`;
-          schedule.appendChild(transition);
-        }
       });
     }
 
+    async function loadBuildNumber() {
+      const el = document.getElementById("buildNumber");
+      if (!el) return;
+      try {
+        const res = await fetch("https://api.github.com/repos/focustap/bensclassesapp/commits/main", {
+          headers: { "Accept": "application/vnd.github+json" }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.sha) el.textContent = " · " + data.sha.slice(0, 7);
+      } catch (_) {}
+    }
+
     render();
+    loadBuildNumber();
     setInterval(render, 30000);
 
     if ("serviceWorker" in navigator) {
