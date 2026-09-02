@@ -10,10 +10,3 @@ Mobile-first Fall 2026 UMass Dartmouth schedule app.
 - MKT 311-02 — Principles of Marketing — Claire Carney Library 207
 
 Classes meet Monday, Wednesday, and Friday.
-
-## Phone install
-Publish the repository with GitHub Pages. Then open the site on your phone:
-- iPhone: Safari → Share → Add to Home Screen
-- Android: Chrome → menu → Add to Home screen / Install app
-
-The service worker caches the schedule so the app can still open offline.
