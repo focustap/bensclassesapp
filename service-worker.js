@@ -1,4 +1,5 @@
-const CACHE = "bens-classes-v3";
+const CACHE_PREFIX = "bens-classes-";
+const CACHE = `${CACHE_PREFIX}v3`;
 
 const INDEX_URL = new URL("./index.html", self.location.href).href;
 const ROOT_URL = new URL("./", self.location.href).href;
@@ -30,7 +31,7 @@ self.addEventListener("activate", (event) => {
       caches.keys().then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== CACHE)
+            .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE)
             .map((key) => caches.delete(key))
         )
       ),
@@ -86,18 +87,7 @@ self.addEventListener("fetch", (event) => {
         const cache = await caches.open(CACHE);
         const cached = await cache.match(request);
 
-        if (cached) {
-          event.waitUntil(
-            fetch(request)
-              .then((response) => {
-                if (response && response.ok) {
-                  return cache.put(request, response.clone());
-                }
-              })
-              .catch(() => {})
-          );
-          return cached;
-        }
+        if (cached) return cached;
 
         try {
           const response = await fetch(request);
