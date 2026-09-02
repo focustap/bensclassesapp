@@ -1,5 +1,5 @@
-const CACHE = "bens-classes-v1";
-const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
+const CACHE = "bens-classes-v2";
+const ASSETS = ["./", "./index.html", "./manifest.json", "./app-icon.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
