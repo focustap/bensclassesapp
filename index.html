@@ -461,14 +461,31 @@
     async function loadBuildNumber() {
       const el = document.getElementById("buildNumber");
       if (!el) return;
+
+      const storageKey = "bensclasses-build";
+      const cachedBuild = localStorage.getItem(storageKey);
+
+      if (cachedBuild) {
+        el.textContent = " · " + cachedBuild;
+      }
+
       try {
         const res = await fetch("https://api.github.com/repos/focustap/bensclassesapp/commits/main", {
-          headers: { "Accept": "application/vnd.github+json" }
+          headers: { "Accept": "application/vnd.github+json" },
+          cache: "no-store"
         });
+
         if (!res.ok) return;
+
         const data = await res.json();
-        if (data.sha) el.textContent = " · " + data.sha.slice(0, 7);
-      } catch (_) {}
+        if (data.sha) {
+          const build = data.sha.slice(0, 7);
+          localStorage.setItem(storageKey, build);
+          el.textContent = " · " + build;
+        }
+      } catch (_) {
+        // Offline: keep showing the last successfully fetched commit.
+      }
     }
 
     render();
