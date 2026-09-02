@@ -121,8 +121,15 @@
       font-size: 14px;
     }
 
-    .countdown {
+    .status-row {
       margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .countdown {
       display: inline-flex;
       padding: 8px 11px;
       border-radius: 10px;
@@ -130,6 +137,28 @@
       color: var(--green);
       font-weight: 800;
       font-size: 13px;
+    }
+
+    .reset-btn, .end-class-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: rgba(255,255,255,.055);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .reset-btn:active, .end-class-btn:active { transform: scale(.98); }
+
+    .end-class-btn {
+      margin-top: 10px;
+      color: var(--orange);
+      border-color: rgba(255,190,117,.28);
+      background: rgba(255,190,117,.08);
     }
 
     .section-title {
@@ -267,7 +296,10 @@
       <p class="eyebrow">Next up</p>
       <h2 id="heroTitle">Checking your schedule…</h2>
       <div class="hero-meta" id="heroMeta"></div>
-      <div class="countdown" id="countdown" hidden></div>
+      <div class="status-row">
+        <div class="countdown" id="countdown" hidden></div>
+        <button class="reset-btn" id="resetSchedule" type="button" hidden>Reset</button>
+      </div>
     </section>
 
     <p class="section-title" id="scheduleTitle">Today's schedule</p>
@@ -337,6 +369,31 @@
 
     const classDays = new Set([1, 3, 5]); // Mon, Wed, Fri
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const endedClassKey = "bensclasses-ended-class";
+
+    const dateKey = (date = new Date()) =>
+      [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+
+    function getEndedClass(now = new Date()) {
+      const saved = localStorage.getItem(endedClassKey);
+      if (!saved) return null;
+      const [savedDate, code] = saved.split("|");
+      if (savedDate !== dateKey(now)) {
+        localStorage.removeItem(endedClassKey);
+        return null;
+      }
+      return code || null;
+    }
+
+    function endClass(code) {
+      localStorage.setItem(endedClassKey, `${dateKey()}|${code}`);
+      render();
+    }
+
+    function resetSchedule() {
+      localStorage.removeItem(endedClassKey);
+      render();
+    }
 
     const toMinutes = (hhmm) => {
       const [h, m] = hhmm.split(":").map(Number);
@@ -358,6 +415,8 @@
     };
 
     function nextScheduledClass(now) {
+      const endedClass = getEndedClass(now);
+
       for (let offset = 0; offset < 8; offset++) {
         const day = new Date(now);
         day.setDate(now.getDate() + offset);
@@ -367,6 +426,7 @@
           const start = dateAtTime(day, cls.start);
           const end = dateAtTime(day, cls.end);
           if (offset === 0 && now > end) continue;
+          if (offset === 0 && cls.code === endedClass && now >= start && now <= end) continue;
           return { cls, start, end, isToday: offset === 0 };
         }
       }
@@ -396,17 +456,26 @@
       const heroTitle = document.getElementById("heroTitle");
       const heroMeta = document.getElementById("heroMeta");
       const countdown = document.getElementById("countdown");
+      const resetButton = document.getElementById("resetSchedule");
+      const endedClass = getEndedClass(now);
+
+      countdown.hidden = true;
+      resetButton.hidden = !endedClass;
 
       if (next) {
         const isCurrent = next.isToday && now >= next.start && now <= next.end;
-        heroTitle.textContent = isCurrent ? next.cls.name : next.cls.name;
+        heroTitle.textContent = next.cls.name;
         heroMeta.innerHTML =
           `${next.cls.code} · ${formatTime(next.cls.start)}<br>${next.cls.room}`;
 
         const diff = next.start - now;
         if (isCurrent) {
+          const leftMs = Math.max(0, next.end - now);
+          const totalSeconds = Math.ceil(leftMs / 1000);
+          const mins = Math.floor(totalSeconds / 60);
+          const secs = totalSeconds % 60;
           countdown.hidden = false;
-          countdown.textContent = "In class now";
+          countdown.textContent = `In class now · ${mins}m ${String(secs).padStart(2, "0")}s left`;
         } else if (diff > 0) {
           const totalMins = Math.ceil(diff / 60000);
           const hours = Math.floor(totalMins / 60);
@@ -432,7 +501,10 @@
       classes.forEach((cls, i) => {
         const startMins = toMinutes(cls.start);
         const endMins = toMinutes(cls.end);
-        const current = !showingFutureDay && todayMins >= startMins && todayMins <= endMins;
+        const current = !showingFutureDay &&
+          todayMins >= startMins &&
+          todayMins <= endMins &&
+          cls.code !== endedClass;
         const nextToday = showingFutureDay
           ? i === 0
           : !current && todayMins < startMins &&
@@ -452,6 +524,7 @@
             <div class="course-code">${cls.code}${current ? " · NOW" : ""}</div>
             <div class="course-name">${cls.name}</div>
             <div class="location">${cls.room}<br>${cls.instructor} · ${cls.floor}</div>
+            ${current ? `<button class="end-class-btn" type="button" data-end-class="${cls.code}">End class</button>` : ""}
           </div>
         `;
         schedule.appendChild(card);
@@ -488,9 +561,15 @@
       }
     }
 
+    document.getElementById("resetSchedule").addEventListener("click", resetSchedule);
+    document.getElementById("schedule").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-end-class]");
+      if (button) endClass(button.dataset.endClass);
+    });
+
     render();
     loadBuildNumber();
-    setInterval(render, 30000);
+    setInterval(render, 1000);
 
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js"));
