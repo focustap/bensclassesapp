@@ -1,11 +1,12 @@
 const CACHE_PREFIX = "bens-classes-";
-const CACHE = `${CACHE_PREFIX}v5`;
+const CACHE = `${CACHE_PREFIX}v6`;
 
 const INDEX_URL = new URL("./index.html", self.location.href).href;
 const ROOT_URL = new URL("./", self.location.href).href;
 const MANIFEST_URL = new URL("./manifest.json", self.location.href).href;
 const ICON_URL = new URL("./app-icon.png", self.location.href).href;
 const CLASS_NOTIFICATION_TAG = "bensclasses-class-status";
+const CLASS_NOTIFICATION_KIND = "bensclasses-class-status";
 
 const CORE_ASSETS = [INDEX_URL, ROOT_URL, MANIFEST_URL, ICON_URL];
 
@@ -41,12 +42,26 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function replaceClassNotification(title, body = "", data = {}) {
-  // iOS has historically been unreliable about replacing notifications by tag.
-  // Explicitly close the prior class-status notification first, then show the
-  // replacement with the same tag so only one should remain visible.
-  const existing = await self.registration.getNotifications({ tag: CLASS_NOTIFICATION_TAG });
-  existing.forEach((notification) => notification.close());
+  // iOS does not reliably coalesce notifications by `tag`, and its tag-filtered
+  // getNotifications() path can disagree with what is actually visible. Ask for
+  // every notification owned by this web app, identify our class-status cards
+  // ourselves, explicitly close them, then briefly let iOS process the closes
+  // before creating the replacement.
+  const existing = await self.registration.getNotifications();
+  const classNotifications = existing.filter((notification) =>
+    notification.data?.kind === CLASS_NOTIFICATION_KIND ||
+    notification.tag === CLASS_NOTIFICATION_TAG ||
+    notification.title === "Class Status"
+  );
+
+  classNotifications.forEach((notification) => notification.close());
+
+  if (classNotifications.length) {
+    await wait(500);
+  }
 
   await self.registration.showNotification(title || "Class Status", {
     body,
@@ -54,6 +69,7 @@ async function replaceClassNotification(title, body = "", data = {}) {
     icon: ICON_URL,
     badge: ICON_URL,
     data: {
+      kind: CLASS_NOTIFICATION_KIND,
       url: ROOT_URL,
       ...data
     }
