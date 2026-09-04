@@ -1,12 +1,10 @@
 const CACHE_PREFIX = "bens-classes-";
-const CACHE = `${CACHE_PREFIX}v6`;
+const CACHE = `${CACHE_PREFIX}v4`;
 
 const INDEX_URL = new URL("./index.html", self.location.href).href;
 const ROOT_URL = new URL("./", self.location.href).href;
 const MANIFEST_URL = new URL("./manifest.json", self.location.href).href;
 const ICON_URL = new URL("./app-icon.png", self.location.href).href;
-const CLASS_NOTIFICATION_TAG = "bensclasses-class-status";
-const CLASS_NOTIFICATION_KIND = "bensclasses-class-status";
 
 const CORE_ASSETS = [INDEX_URL, ROOT_URL, MANIFEST_URL, ICON_URL];
 
@@ -39,105 +37,6 @@ self.addEventListener("activate", (event) => {
       ),
       self.clients.claim()
     ])
-  );
-});
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function replaceClassNotification(title, body = "", data = {}) {
-  // iOS does not reliably coalesce notifications by `tag`, and its tag-filtered
-  // getNotifications() path can disagree with what is actually visible. Ask for
-  // every notification owned by this web app, identify our class-status cards
-  // ourselves, explicitly close them, then briefly let iOS process the closes
-  // before creating the replacement.
-  const existing = await self.registration.getNotifications();
-  const classNotifications = existing.filter((notification) =>
-    notification.data?.kind === CLASS_NOTIFICATION_KIND ||
-    notification.tag === CLASS_NOTIFICATION_TAG ||
-    notification.title === "Class Status"
-  );
-
-  classNotifications.forEach((notification) => notification.close());
-
-  if (classNotifications.length) {
-    await wait(500);
-  }
-
-  await self.registration.showNotification(title || "Class Status", {
-    body,
-    tag: CLASS_NOTIFICATION_TAG,
-    icon: ICON_URL,
-    badge: ICON_URL,
-    data: {
-      kind: CLASS_NOTIFICATION_KIND,
-      url: ROOT_URL,
-      ...data
-    }
-  });
-}
-
-self.addEventListener("message", (event) => {
-  if (!event.data || event.data.type !== "replace-class-notification") return;
-
-  event.waitUntil(
-    (async () => {
-      try {
-        await replaceClassNotification(
-          event.data.title || "Class Status",
-          event.data.body || "",
-          event.data.data || {}
-        );
-        event.ports?.[0]?.postMessage({ ok: true });
-      } catch (error) {
-        event.ports?.[0]?.postMessage({
-          ok: false,
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
-    })()
-  );
-});
-
-// This is ready for a future Web Push backend. Push payloads can use the same
-// replacement path without changing the notification behavior on the phone.
-self.addEventListener("push", (event) => {
-  let payload = {};
-  try {
-    payload = event.data ? event.data.json() : {};
-  } catch (_) {
-    payload = { body: event.data ? event.data.text() : "" };
-  }
-
-  event.waitUntil(
-    replaceClassNotification(
-      payload.title || "Class Status",
-      payload.body || "",
-      payload.data || {}
-    )
-  );
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-
-  event.waitUntil(
-    (async () => {
-      const windows = await self.clients.matchAll({
-        type: "window",
-        includeUncontrolled: true
-      });
-
-      for (const client of windows) {
-        if (new URL(client.url).origin === self.location.origin) {
-          await client.focus();
-          return;
-        }
-      }
-
-      if (self.clients.openWindow) {
-        await self.clients.openWindow(event.notification.data?.url || ROOT_URL);
-      }
-    })()
   );
 });
 
